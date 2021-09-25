@@ -23,10 +23,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	// TODO: remove
-	log.Println(qs.Any())
-
-	var s Server
+	s := Server{
+		Quotes:        qs,
+		POWDifficulty: 10,
+	}
 	log.Printf("start listening incoming requests on %q", *addr)
 	if err := s.Listen(*addr); err != nil {
 		log.Printf("failed to start server: %v", err)
