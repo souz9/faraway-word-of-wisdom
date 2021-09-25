@@ -13,7 +13,7 @@ import (
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
-	addr := flag.String("listen", ":9000", "Listen incoming requests on host:port")
+	listen := flag.String("listen", ":9000", "Listen incoming requests on host:port")
 	quotesPath := flag.String("quotes", "quotes.txt", "Path to a file with quotes")
 	flag.Parse()
 
@@ -27,8 +27,8 @@ func main() {
 		Quotes:        qs,
 		POWDifficulty: 10,
 	}
-	log.Printf("start listening incoming requests on %q", *addr)
-	if err := s.Listen(*addr); err != nil {
+	log.Printf("start listening incoming requests on %q", *listen)
+	if err := s.Listen(*listen); err != nil {
 		log.Printf("failed to start server: %v", err)
 		os.Exit(1)
 	}

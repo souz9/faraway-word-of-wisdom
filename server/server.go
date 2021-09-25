@@ -3,12 +3,11 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"math/rand"
 	"net"
-	"strings"
 
 	"github.com/bwesterb/go-pow"
+	"github.com/souz9/faraway-word-of-wisdom.git/protocol"
 	"github.com/souz9/faraway-word-of-wisdom.git/quotes"
 )
 
@@ -34,11 +33,11 @@ func (s *Server) Listen(addr string) error {
 
 		go func() {
 			if err := s.handle(conn); err != nil {
-				// The client probably will be interested in the error if occurred,
-				// trying to send it as a text.
+				// Debug print or send the error back to the client
+				// if it should need.
 				// Here we can ignore any further errors, 'cause most likely the client
 				// has already disconnected.
-				conn.Write([]byte(err.Error()))
+				// conn.Write([]byte(err.Error()))
 			}
 			conn.Close()
 		}()
@@ -46,47 +45,27 @@ func (s *Server) Listen(addr string) error {
 }
 
 func (s *Server) handle(conn net.Conn) error {
-	r := bufio.NewReader(conn)
-	w := conn
+	r, w := bufio.NewReader(conn), conn
 
 	// Start of POW-procedure.
 	// Generate and send "challenge" to the client.
 	challenge := pow.NewRequest(s.POWDifficulty, nonce())
-	if err := s.write(w, challenge); err != nil {
+	if err := protocol.Write(w, challenge); err != nil {
 		return err
 	}
 
 	// Wait for response (POW solution) and verify it.
-	proof, err := s.read(r)
+	proof, err := protocol.Read(r)
 	if err != nil {
 		return err
 	}
 	verified, err := pow.Check(challenge, proof, nil)
 	if err != nil || !verified {
-		return fmt.Errorf("access denied (%v)", err)
+		return fmt.Errorf("access denied: %v", err)
 	}
 	// End of POW-procedure.
 
-	return s.write(w, s.Quotes.Any())
-}
-
-// Reads a message from connection.
-func (_ *Server) read(r *bufio.Reader) (string, error) {
-	line, err := r.ReadString('\n')
-	return strings.TrimSuffix(line, "\n"), err
-}
-
-// Writes a message to connection.
-func (_ *Server) write(w io.Writer, message string) error {
-	line := append([]byte(message), '\n')
-	for len(line) > 0 {
-		n, err := w.Write(line)
-		if err != nil {
-			return err
-		}
-		line = line[n:]
-	}
-	return nil
+	return protocol.Write(w, s.Quotes.Any())
 }
 
 // Generates random sequence that's used as a nonce.
