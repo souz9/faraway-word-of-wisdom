@@ -19,7 +19,7 @@ func main() {
 
 	var qs quotes.Quotes
 	if err := qs.Load(*quotesPath); err != nil {
-		log.Printf("load quote %v", err)
+		log.Printf("load quotes: %v", err)
 		os.Exit(1)
 	}
 
